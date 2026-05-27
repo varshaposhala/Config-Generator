@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
-import os
+import subprocess, os
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -2613,6 +2613,15 @@ def automate_all_sections(driver, wait, sections, progress_placeholder):
 # ============================================================
 
 def run_automation(mobile_num, otp_code, sections, wait_time=10):
+    if not os.path.exists('/usr/bin/google-chrome'):
+    subprocess.run([
+        'wget', '-q', '-O', '/tmp/chrome.deb',
+        'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb'
+    ], check=True)
+    subprocess.run(
+        ['apt-get', 'install', '-y', '/tmp/chrome.deb'],
+        check=True
+    )
     start_time           = time.time()
     driver               = None
     progress_placeholder = st.empty()
@@ -2801,6 +2810,69 @@ def run_automation(mobile_num, otp_code, sections, wait_time=10):
 # ============================================================
 
 st.write("---")
+if st.button("🔍 DEBUG: Check Chrome Environment"):
+    import subprocess, os
+    
+    st.subheader("System Info")
+    
+    # Check OS
+    try:
+        result = subprocess.run(['cat', '/etc/os-release'], capture_output=True, text=True)
+        st.code(result.stdout, language="bash")
+    except Exception as e:
+        st.error(f"OS check failed: {e}")
+    
+    # Find chrome/chromium binaries
+    st.subheader("Chrome Binaries Found")
+    paths_to_check = [
+        '/usr/bin/chromium',
+        '/usr/bin/chromium-browser', 
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable',
+        '/usr/lib/chromium/chromium',
+        '/snap/bin/chromium',
+    ]
+    for p in paths_to_check:
+        if os.path.exists(p):
+            st.success(f"✅ EXISTS: {p}")
+        else:
+            st.error(f"❌ Missing: {p}")
+    
+    # Find chromedriver
+    st.subheader("ChromeDriver Binaries Found")
+    driver_paths = [
+        '/usr/bin/chromedriver',
+        '/usr/lib/chromium/chromedriver',
+        '/usr/lib/chromium-browser/chromedriver',
+        '/snap/bin/chromedriver',
+    ]
+    for p in driver_paths:
+        if os.path.exists(p):
+            st.success(f"✅ EXISTS: {p}")
+        else:
+            st.error(f"❌ Missing: {p}")
+    
+    # Search everywhere
+    st.subheader("Search Results (find)")
+    try:
+        r1 = subprocess.run(
+            ['find', '/usr', '-name', 'chrom*', '-type', 'f'],
+            capture_output=True, text=True, timeout=10
+        )
+        st.code(r1.stdout or "Nothing found", language="bash")
+    except Exception as e:
+        st.error(f"find failed: {e}")
+    
+    # Available apt packages
+    st.subheader("Available chromium apt packages")
+    try:
+        r2 = subprocess.run(
+            ['apt-cache', 'search', 'chromium'],
+            capture_output=True, text=True, timeout=10
+        )
+        st.code(r2.stdout or "Nothing found", language="bash")
+    except Exception as e:
+        st.error(f"apt-cache failed: {e}")
 if st.button("🚀 START AUTOMATION", use_container_width=True, type="primary"):
     if not uploaded_file or not mob or len(otp_val) != 6:
         st.warning(
