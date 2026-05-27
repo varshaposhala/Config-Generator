@@ -2614,14 +2614,14 @@ def automate_all_sections(driver, wait, sections, progress_placeholder):
 
 def run_automation(mobile_num, otp_code, sections, wait_time=10):
     if not os.path.exists('/usr/bin/google-chrome'):
-    subprocess.run([
-        'wget', '-q', '-O', '/tmp/chrome.deb',
-        'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb'
-    ], check=True)
-    subprocess.run(
-        ['apt-get', 'install', '-y', '/tmp/chrome.deb'],
-        check=True
-    )
+        subprocess.run([
+            'wget', '-q', '-O', '/tmp/chrome.deb',
+            'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb'
+        ], check=True)
+        subprocess.run(
+            ['apt-get', 'install', '-y', '/tmp/chrome.deb'],
+            check=True
+        )
     start_time           = time.time()
     driver               = None
     progress_placeholder = st.empty()
