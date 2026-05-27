@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
+import os
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -2619,26 +2620,40 @@ def run_automation(mobile_num, otp_code, sections, wait_time=10):
     try:
         progress_placeholder.info("🔧 Initializing browser...")
 
+
+
         options = Options()
         options.page_load_strategy = 'normal'
-        options.add_argument('--start-maximized')
-        options.add_argument('--disable-blink-features=AutomationControlled')
+        
+        # --- Streamlit Cloud / headless server required flags ---
+        options.add_argument('--headless=new')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--window-size=1920,1080')
+        options.add_argument('--disable-blink-features=AutomationControlled')
         options.add_argument('--disable-background-timer-throttling')
         options.add_argument('--disable-backgrounding-occluded-windows')
         options.add_argument('--disable-renderer-backgrounding')
         options.add_experimental_option("prefs", {
             "profile.default_content_setting_values.notifications": 2,
         })
-
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
+        
+        # Auto-detect Streamlit Cloud vs local
+        chromedriver_path = '/usr/bin/chromedriver'
+        if os.path.exists(chromedriver_path):
+            # Streamlit Cloud — use system chromium
+            service = Service(chromedriver_path)
+        else:
+            # Local — use webdriver-manager
+            service = Service(ChromeDriverManager().install())
+            # Remove headless for local so you can see the browser
+            options.arguments.remove('--headless=new')
+        
+        driver = webdriver.Chrome(service=service, options=options)
         driver.set_page_load_timeout(60)
         driver.implicitly_wait(2)
-        wait = WebDriverWait(driver, wait_time)
+        wait = WebDriverWait(driver, wait_time)        
 
         driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
             'source': """
