@@ -2635,23 +2635,22 @@ def run_automation(mobile_num, otp_code, sections, wait_time=10):
             "profile.default_content_setting_values.notifications": 2,
         })
 
-        # Use confirmed paths from debug scan
-        CHROME_BIN    = '/usr/bin/chromium'
-        CHROMEDRIVER  = '/usr/bin/chromedriver'
-
-        if os.path.exists(CHROME_BIN) and os.path.exists(CHROMEDRIVER):
-            # Streamlit Cloud — use system chromium
-            options.binary_location = CHROME_BIN
-            service = Service(CHROMEDRIVER)
+        if os.path.exists('/usr/bin/chromium'):
+            # Streamlit Cloud
+            options.binary_location = '/usr/bin/chromium'
+            service = Service('/usr/bin/chromedriver')
+            progress_placeholder.info("  ✅ Using system Chromium (Streamlit Cloud)")
         else:
-            # Local machine — use webdriver-manager, run with UI visible
+            # Local machine
             service = Service(ChromeDriverManager().install())
             options.arguments.remove('--headless=new')
+            progress_placeholder.info("  ✅ Using webdriver-manager (local)")
 
         driver = webdriver.Chrome(service=service, options=options)
         driver.set_page_load_timeout(60)
         driver.implicitly_wait(2)
         wait = WebDriverWait(driver, wait_time)
+    
         driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
             'source': """
                 document.__proto__.hasFocus = function(){ return true; };
