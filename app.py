@@ -2613,15 +2613,6 @@ def automate_all_sections(driver, wait, sections, progress_placeholder):
 # ============================================================
 
 def run_automation(mobile_num, otp_code, sections, wait_time=10):
-    if not os.path.exists('/usr/bin/google-chrome'):
-        subprocess.run([
-            'wget', '-q', '-O', '/tmp/chrome.deb',
-            'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb'
-        ], check=True)
-        subprocess.run(
-            ['apt-get', 'install', '-y', '/tmp/chrome.deb'],
-            check=True
-        )
     start_time           = time.time()
     driver               = None
     progress_placeholder = st.empty()
@@ -2629,12 +2620,8 @@ def run_automation(mobile_num, otp_code, sections, wait_time=10):
     try:
         progress_placeholder.info("🔧 Initializing browser...")
 
-
-
         options = Options()
         options.page_load_strategy = 'normal'
-        
-        # --- Streamlit Cloud / headless server required flags ---
         options.add_argument('--headless=new')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
@@ -2647,23 +2634,24 @@ def run_automation(mobile_num, otp_code, sections, wait_time=10):
         options.add_experimental_option("prefs", {
             "profile.default_content_setting_values.notifications": 2,
         })
-        
-        # Auto-detect Streamlit Cloud vs local
-        chromedriver_path = '/usr/bin/chromedriver'
-        if os.path.exists(chromedriver_path):
+
+        # Use confirmed paths from debug scan
+        CHROME_BIN    = '/usr/bin/chromium'
+        CHROMEDRIVER  = '/usr/bin/chromedriver'
+
+        if os.path.exists(CHROME_BIN) and os.path.exists(CHROMEDRIVER):
             # Streamlit Cloud — use system chromium
-            service = Service(chromedriver_path)
+            options.binary_location = CHROME_BIN
+            service = Service(CHROMEDRIVER)
         else:
-            # Local — use webdriver-manager
+            # Local machine — use webdriver-manager, run with UI visible
             service = Service(ChromeDriverManager().install())
-            # Remove headless for local so you can see the browser
             options.arguments.remove('--headless=new')
-        
+
         driver = webdriver.Chrome(service=service, options=options)
         driver.set_page_load_timeout(60)
         driver.implicitly_wait(2)
-        wait = WebDriverWait(driver, wait_time)        
-
+        wait = WebDriverWait(driver, wait_time)
         driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
             'source': """
                 document.__proto__.hasFocus = function(){ return true; };
